@@ -138,6 +138,18 @@ Basic usage:
 </code></pre>
 
 <ul>
+  <li><strong>Get camera settings:</li>
+</ul>
+
+<pre><code>python main.py \
+  --lang ru \
+  --ip 10.88.39.16:1006 \
+  --user admin \
+  --pwd 39Cprkbgr! \
+  --get_stream
+</code></pre>
+
+<ul>
   <li><strong>Disable audio</strong> for the main stream:</li>
 </ul>
 <pre><code>python main.py \
