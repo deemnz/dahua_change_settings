@@ -1,40 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Dahua Change Settings</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      line-height: 1.5;
-      margin: 20px;
-      max-width: 800px;
-    }
-    code, pre {
-      background: #f8f8f8;
-      border: 1px solid #ccc;
-      padding: 4px 6px;
-      border-radius: 4px;
-      font-family: Consolas, "Courier New", monospace;
-    }
-    pre code {
-      display: block;
-      padding: 8px;
-      overflow-x: auto;
-    }
-    h1, h2, h3 {
-      margin-top: 24px;
-    }
-    h1 {
-      margin-bottom: 16px;
-    }
-    ul {
-      margin: 10px 0 10px 20px;
-    }
-  </style>
-</head>
-<body>
-
 <h1>Dahua Change Settings</h1>
 
 <p>
@@ -255,6 +218,3 @@
 При возникновении вопросов, обращайтесь в <strong>Issues</strong> репозитория или создавайте Pull Request. 
 Будем рады вашим улучшениям!
 </p>
-
-</body>
-</html>
