@@ -3,152 +3,177 @@ import sys
 
 from utils.ip_utils import get_ip_list
 from utils.messages import MESSAGES
-
 from dahua_api.camera_common import set_single_param
+from dahua_api.camera_stream import get_stream_config
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Dahua Cameras: single-param changes")
+    parser = argparse.ArgumentParser(description="Dahua Change Settings")
 
-    parser.add_argument("--lang", default="ru", help="Language (ru/en)")
+    parser.add_argument("--lang", default="ru", help="Language: ru/en")
     parser.add_argument("--ip", required=True,
-                        help="IP/file/range (e.g. 192.168.1.10:80 or cams.txt or 192.168.1.10:80-192.168.1.20:80)")
-    parser.add_argument("--user", required=True, help="Camera login")
-    parser.add_argument("--pwd", required=True, help="Camera password")
+                        help="Camera IP, range ip:port-ip:port, or file with IP list")
+    parser.add_argument("--user", required=True,
+                        help="Camera login")
+    parser.add_argument("--pwd", required=True,
+                        help="Camera password")
 
-    # Для указания, к какому потоку обращаемся
-    parser.add_argument("--channel", type=int, default=0, help="Encode channel (default 0)")
-    parser.add_argument("--stream_type", type=str, default="MainFormat",
-                        help="MainFormat / ExtraFormat / etc.")
-    parser.add_argument("--stream_index", type=int, default=0,
-                        help="Index of the stream (usually 0)")
+    # Флаги управления потоком
+    parser.add_argument("--get_stream", action="store_true",
+                        help="GET (read) stream config: Encode[channel].stream_type[stream_index]")
+    parser.add_argument("--set_stream", action="store_true",
+                        help="SET (write) stream config: Encode[channel].stream_type[stream_index].Video.*")
 
-    # --- Удобные флаги для Video ---
-    # Если пользователь не укажет --compression, значит мы этот параметр не трогаем.
-    parser.add_argument("--compression", type=str,
-                        help="Video compression, e.g. H.264 / H.265")
-    parser.add_argument("--bit_rate", type=int,
-                        help="Video.BitRate (Kbps)")
-    parser.add_argument("--bit_rate_control", type=str,
-                        help="Video.BitRateControl (CBR/VBR)")
-    parser.add_argument("--fps", type=int,
-                        help="Video.FPS")
-    parser.add_argument("--resolution", type=str,
-                        help="Video.resolution (e.g. 640x480)")
-    parser.add_argument("--width", type=int,
-                        help="Video.Width")
-    parser.add_argument("--height", type=int,
-                        help="Video.Height")
-    parser.add_argument("--quality", type=int,
-                        help="Video.Quality")
-    parser.add_argument("--quality_range", type=int,
-                        help="Video.QualityRange")
-    parser.add_argument("--gop", type=int,
-                        help="Video.GOP")
-    parser.add_argument("--profile", type=str,
-                        help="Video.Profile (e.g. Main/High)")
-    parser.add_argument("--priority", type=int,
-                        help="Video.Priority")
-    # ... при желании добавляйте другие
+    parser.add_argument("--channel", type=int, default=0, help="Encode[...] channel index (default 0)")
+    parser.add_argument("--stream_type", type=str, default="MainFormat", help="MainFormat / ExtraFormat / etc.")
+    parser.add_argument("--stream_index", type=int, default=0, help="Index of the stream, usually 0")
 
-    # --- Удобные флаги для Audio (если нужно) ---
-    parser.add_argument("--audio_enable", action="store_true",
-                        help="Encode[..].AudioEnable=true")
-    parser.add_argument("--audio_disable", action="store_true",
-                        help="Encode[..].AudioEnable=false")
-    parser.add_argument("--audio_bitrate", type=int,
-                        help="Audio.Bitrate")
-    parser.add_argument("--audio_compression", type=str,
-                        help="Audio.Compression (G.711A, G.711U, AAC, etc.)")
-    # ... и т.д.
+    # Параметры Video, которые можно прочитать/установить
+    parser.add_argument("--compression", action="store_true",
+                        help="Compression (H.264/H.265). For get => filter, for set => pass value via --compression_value")
+    parser.add_argument("--compression_value", type=str,
+                        help="Value for Video.Compression, e.g. H.265 (used with --set_stream)")
+
+    parser.add_argument("--bit_rate", action="store_true",
+                        help="BitRate (Kbps). For get => filter, for set => pass value via --bit_rate_value")
+    parser.add_argument("--bit_rate_value", type=int,
+                        help="Value for Video.BitRate, e.g. 512")
+
+    parser.add_argument("--bit_rate_control", action="store_true",
+                        help="BitRateControl (CBR/VBR). For get => filter, for set => pass value via --bit_rate_control_value")
+    parser.add_argument("--bit_rate_control_value", type=str,
+                        help="Value for Video.BitRateControl, e.g. VBR")
+
+    parser.add_argument("--resolution", action="store_true",
+                        help="Video.resolution=, for get => filter, for set => use --resolution_value (e.g. 640x480)")
+    parser.add_argument("--resolution_value", type=str,
+                        help="Value for Video.resolution")
+
+    parser.add_argument("--fps", action="store_true",
+                        help="Video.FPS. For get => filter, for set => pass value via --fps_value")
+    parser.add_argument("--fps_value", type=int,
+                        help="Value for Video.FPS")
+
+    parser.add_argument("--quality", action="store_true",
+                        help="Video.Quality. For get => filter, for set => pass value via --quality_value")
+    parser.add_argument("--quality_value", type=int,
+                        help="Value for Video.Quality")
+
+    # ... при желании можно добавить gop, profile, priority, audio_enable и т.п.
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+
+    # Установка языка
     if args.lang not in MESSAGES:
         args.lang = 'ru'
     msg = MESSAGES[args.lang]
 
-    # Получаем список IP-адресов
+    # Получаем список IP (одиночный, диапазон, файл)
     try:
         cameras = get_ip_list(args.ip)
     except ValueError as ve:
         if str(ve) == "range_error":
-            print(msg['range_error'])
+            print(msg["range_error"])
         else:
-            print(msg['cant_parse'], ve)
+            print(msg["cant_parse"], ve)
         sys.exit(1)
     except Exception as e:
         print(e)
         sys.exit(1)
 
     if not cameras:
-        print(msg['no_ip'])
+        print(msg["no_ip"])
         sys.exit(1)
 
-    # Формируем список "параметров" для Video / Audio
-    # исходя из того, что указал пользователь
-    # Пример: "Encode[0].ExtraFormat[0].Video.BitRateControl=VBR"
-    # Внимательно смотрим регистр - сопоставляем с тем, что в GET-ответе у вашей камеры
+    # Список "поля, которые пользователь хочет получить" (для GET)
+    # Мы сопоставим: если user указал --compression => хотим вытащить "Compression="
+    # Если user указал --bit_rate => хотим "BitRate=" и т.д.
+    get_fields = []
+    if args.compression:
+        get_fields.append("Compression=")
+    if args.bit_rate:
+        get_fields.append("BitRate=")
+    if args.bit_rate_control:
+        get_fields.append("BitRateControl=")
+    if args.resolution:
+        get_fields.append("resolution=")
+    if args.fps:
+        get_fields.append("FPS=")
+    if args.quality:
+        get_fields.append("Quality=")
+    # ... при желании другие поля
 
-    # Для удобства сделаем функцию-генератор
-    def generate_params():
-        ch = args.channel
-        st = args.stream_type
-        idx = args.stream_index
+    # Список (param_str) -> для SET
+    # Если user указал --compression_value "H.265", значит:
+    # "Encode[0].MainFormat[0].Video.Compression=H.265"
+    set_params = []
+    ch = args.channel
+    st = args.stream_type
+    ix = args.stream_index
 
-        # Video
-        if args.compression is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Compression={args.compression}"
-        if args.bit_rate is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.BitRate={args.bit_rate}"
-        if args.bit_rate_control is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.BitRateControl={args.bit_rate_control}"
-        if args.fps is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.FPS={args.fps}"
-        if args.resolution is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.resolution={args.resolution}"
-        if args.width is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Width={args.width}"
-        if args.height is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Height={args.height}"
-        if args.quality is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Quality={args.quality}"
-        if args.quality_range is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.QualityRange={args.quality_range}"
-        if args.gop is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.GOP={args.gop}"
-        if args.profile is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Profile={args.profile}"
-        if args.priority is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Video.Priority={args.priority}"
+    # Если user сказал --compression и --compression_value => SET
+    if args.set_stream and args.compression_value is not None:
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.Compression={args.compression_value}")
+    if args.set_stream and args.bit_rate_value is not None:
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.BitRate={args.bit_rate_value}")
+    if args.set_stream and args.bit_rate_control_value is not None:
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.BitRateControl={args.bit_rate_control_value}")
+    if args.set_stream and args.resolution_value is not None:
+        # Обратите внимание на регистр 'resolution' (см. GET-ответ)
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.resolution={args.resolution_value}")
+    if args.set_stream and args.fps_value is not None:
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.FPS={args.fps_value}")
+    if args.set_stream and args.quality_value is not None:
+        set_params.append(f"Encode[{ch}].{st}[{ix}].Video.Quality={args.quality_value}")
+    # ... аналогично можно расширить
 
-        # AudioEnable
-        if args.audio_enable:
-            yield f"Encode[{ch}].{st}[{idx}].AudioEnable=true"
-        elif args.audio_disable:
-            yield f"Encode[{ch}].{st}[{idx}].AudioEnable=false"
-
-        # Audio
-        if args.audio_bitrate is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Audio.Bitrate={args.audio_bitrate}"
-        if args.audio_compression is not None:
-            yield f"Encode[{ch}].{st}[{idx}].Audio.Compression={args.audio_compression}"
-        # ... и т.д. по аналогии
+    from dahua_api.camera_stream import get_stream_config
+    from dahua_api.camera_common import set_single_param
 
     for cam in cameras:
-        for param_str in generate_params():
-            r = set_single_param(cam, args.user, args.pwd, param_str)
+        # 1. GET (если user указал --get_stream)
+        if args.get_stream:
+            r = get_stream_config(cam, args.user, args.pwd,
+                                  channel=ch,
+                                  stream_type=st,
+                                  index=ix)
             if isinstance(r, Exception):
-                print(f"{msg['set_fail']} {cam}: {r}")
+                print(f"{msg['get_fail']} {cam}: {r}")
             else:
                 if r.status_code == 200:
-                    print(f"{msg['set_ok']} {cam} ({param_str})")
+                    print(f"{msg['get_ok']} {cam}")
+                    lines = r.text.splitlines()
+                    # Если пользователь указал хотя бы один --compression / --bit_rate и т.д.
+                    # то мы фильтруем только нужные строки
+                    if get_fields:
+                        for line in lines:
+                            # Проверяем, содержит ли строка один из полей
+                            if any(f in line for f in get_fields):
+                                print(line)
+                    else:
+                        # Если не указаны конкретные поля, выводим всё
+                        for line in lines:
+                            print(line)
                 else:
-                    print(f"{msg['set_fail']} {cam} ({param_str}): {r.status_code}")
+                    print(f"{msg['get_fail']} {cam}: {r.status_code}")
 
-    print(msg['done'])
+        # 2. SET (если user указал --set_stream) - по одному параметру на запрос
+        if args.set_stream:
+            for param_str in set_params:
+                resp = set_single_param(cam, args.user, args.pwd, param_str)
+                if isinstance(resp, Exception):
+                    print(f"{msg['set_fail']} {cam}: {resp}")
+                else:
+                    if resp.status_code == 200:
+                        print(f"{msg['set_ok']} {cam} ({param_str})")
+                    else:
+                        print(f"{msg['set_fail']} {cam} ({param_str}): {resp.status_code}")
+
+    print(msg["done"])
 
 
 if __name__ == "__main__":
