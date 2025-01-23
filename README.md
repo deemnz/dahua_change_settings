@@ -1,4 +1,4 @@
-<h1>Dahua Change Settings</h1>
+<h1>Dahua Change Settings Tool</h1>
 
 <p>
 Скрипт на Python для массового управления настройками Dahua-камер (IP-адреса, порты, параметры 
