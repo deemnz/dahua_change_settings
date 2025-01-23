@@ -1,85 +1,85 @@
-<h1>Dahua Change Settings Tool</h1>
+<h1>Dahua Change Settings</h1>
 
 <p>
-Скрипт на Python для массового управления настройками Dahua-камер (IP-адреса, порты, параметры 
-видеопотоков, RTSP, NTP, снапшоты и пр.) через HTTP API Dahua. Поддерживается <strong>Digest-аутентификация</strong>, 
-позволяющая работать с современными прошивками, а также работа с диапазонами IP 
-(например <code>192.168.1.10-192.168.1.20</code>) и диапазонами портов 
-(например <code>192.168.1.10:1008-192.168.1.10:1010</code>).
+A Python script for bulk management of Dahua camera settings (IP addresses, ports, video stream parameters, 
+RTSP, NTP, snapshots, etc.) via the Dahua HTTP API. It supports <strong>Digest authentication</strong>, 
+allowing it to work with modern firmwares, as well as working with IP ranges 
+(for example <code>192.168.1.10-192.168.1.20</code>) and port ranges 
+(for example <code>192.168.1.10:1008-192.168.1.10:1010</code>).
 </p>
 
-<h2>Основные возможности</h2>
+<h2>Main Features</h2>
 <ul>
-  <li><strong>Одиночное изменение параметров</strong> (точно так же, как при ручном вызове <code>setConfig</code> через браузер).</li>
-  <li>Изменение нескольких параметров <strong>за один проход</strong> — если это поддерживается камерой.</li>
-  <li>Работа с <strong>диапазонами IP</strong> (или с диапазонами портов), а также чтение списков IP из файла.</li>
-  <li>Поддержка <strong>русского/английского</strong> языков выводимых сообщений (через <code>--lang ru</code> / <code>--lang en</code>).</li>
+  <li><strong>Single parameter changes</strong> (just like manually calling <code>setConfig</code> in a browser).</li>
+  <li>Changing multiple parameters <strong>in one pass</strong> — if supported by the camera.</li>
+  <li>Working with <strong>IP ranges</strong> (or port ranges), as well as reading IP lists from a file.</li>
+  <li>Support for <strong>Russian/English</strong> output messages (via <code>--lang ru</code> / <code>--lang en</code>).</li>
 </ul>
 
-<h2>Установка</h2>
+<h2>Installation</h2>
 <ol>
-  <li>Клонируйте репозиторий:
+  <li>Clone the repository:
     <pre><code>git clone https://github.com/deemnz/dahua_change_settings.git</code></pre>
   </li>
-  <li>Перейдите в папку проекта:
+  <li>Go to the project folder:
     <pre><code>cd dahua_change_settings</code></pre>
   </li>
-  <li>Установите зависимости (включая <code>requests</code>):
+  <li>Install dependencies (including <code>requests</code>):
     <pre><code>pip install -r requirements.txt</code></pre>
   </li>
 </ol>
 
-<h2>Структура проекта (пример)</h2>
+<h2>Project Structure (example)</h2>
 <pre><code>dahua_change_settings/
-├── main.py                # Точка входа (CLI)
+├── main.py                # Entry point (CLI)
 ├── requirements.txt
 ├── utils/
 │   ├── __init__.py
-│   ├── messages.py        # Словарь сообщений (ru/en)
-│   └── ip_utils.py        # Работа с диапазонами IP/портов, парсинг
+│   ├── messages.py        # Dictionary of messages (ru/en)
+│   └── ip_utils.py        # Working with IP/port ranges, parsing
 ├── dahua_api/
 │   ├── __init__.py
-│   ├── camera_common.py   # Общие функции GET/SET (DigestAuth)
-│   ├── camera_stream.py   # Настройки видео/аудио (Encode[..])
-│   ├── camera_rtsp.py     # Настройки RTSP
-│   ├── camera_ntp.py      # Настройки NTP
-│   └── camera_snap.py     # Настройки snapshot (Snap[..])
+│   ├── camera_common.py   # Common GET/SET functions (DigestAuth)
+│   ├── camera_stream.py   # Video/audio settings (Encode[..])
+│   ├── camera_rtsp.py     # RTSP settings
+│   ├── camera_ntp.py      # NTP settings
+│   └── camera_snap.py     # Snapshot settings (Snap[..])
 └── ...
 </code></pre>
 
-<h2>Запуск скрипта</h2>
+<h2>Running the Script</h2>
 <p>
-Основной запуск:
+Basic usage:
 </p>
-<pre><code>python main.py [параметры]
+<pre><code>python main.py [options]
 </code></pre>
 <p>
-(Убедитесь, что запускаете из корневой папки проекта, чтобы импорты работали.)
+(Make sure you run it from the project's root folder so that imports work correctly.)
 </p>
 
-<h3>Ключевые аргументы</h3>
+<h3>Key Arguments</h3>
 <ul>
-  <li><code>--ip</code>: Адрес камеры, диапазон IP или файл со списком адресов.
+  <li><code>--ip</code>: Camera address, IP range, or a file with a list of addresses.
     <ul>
-      <li><strong>Примеры:</strong></li>
-      <li><code>--ip 192.168.1.10</code> (одна камера, порт 80 по умолчанию)</li>
-      <li><code>--ip 192.168.1.10:8080</code> (камера с нестандартным портом 8080)</li>
-      <li><code>--ip cams.txt</code> (файл, где каждая строка — <code>ip:port</code>)</li>
-      <li><code>--ip 192.168.1.10:80-192.168.1.15:80</code> (диапазон IP)</li>
-      <li><code>--ip 192.168.1.10:1008-192.168.1.10:1010</code> (один IP, разные порты)</li>
+      <li><strong>Examples:</strong></li>
+      <li><code>--ip 192.168.1.10</code> (single camera, default port 80)</li>
+      <li><code>--ip 192.168.1.10:8080</code> (camera with non-standard port 8080)</li>
+      <li><code>--ip cams.txt</code> (file where each line is <code>ip:port</code>)</li>
+      <li><code>--ip 192.168.1.10:80-192.168.1.15:80</code> (IP range)</li>
+      <li><code>--ip 192.168.1.10:1008-192.168.1.10:1010</code> (same IP, different ports)</li>
     </ul>
   </li>
-  <li><code>--user</code>, <code>--pwd</code>: Логин и пароль. Используется DigestAuth.</li>
-  <li><code>--lang</code>: Язык вывода сообщений (<code>ru</code> или <code>en</code>). По умолчанию <code>ru</code>.</li>
+  <li><code>--user</code>, <code>--pwd</code>: Login and password. DigestAuth is used.</li>
+  <li><code>--lang</code>: Language for output messages (<code>ru</code> or <code>en</code>). Default is <code>ru</code>.</li>
 </ul>
 
-<h3>Режимы изменения параметров</h3>
+<h3>Parameter Change Modes</h3>
 <ol>
   <li>
-    <strong>Одиночные параметры</strong> (одноимённые короткие флаги).
+    <strong>Single parameters</strong> (similarly named short flags).
     <p>
-      Вызываем каждое изменение отдельным <code>setConfig</code>. Это аналогично ручному вызову в браузере.  
-      Пример аргументов для <em>ExtraFormat</em>:
+      Each change is sent via an individual <code>setConfig</code> call, just like a manual call in the browser.
+      For example, arguments for <em>ExtraFormat</em>:
     </p>
     <pre><code>python main.py \
   --ip 192.168.1.10:1010 \
@@ -91,42 +91,42 @@
   --resolution 640x480
 </code></pre>
     <p>
-      При этом будут отправлены несколько запросов:
+      This will send multiple requests:
     </p>
     <pre><code>&Encode[0].ExtraFormat[0].Video.Compression=H.265
 &Encode[0].ExtraFormat[0].Video.BitRate=512
 &Encode[0].ExtraFormat[0].Video.BitRateControl=VBR
 &Encode[0].ExtraFormat[0].Video.resolution=640x480
 </code></pre>
-    <p>— каждый по отдельности (DigestAuth автоматически handle-ит nonce, cnonce и т.д.).</p>
+    <p>— each one separately (DigestAuth automatically handles nonce, cnonce, etc.).</p>
 
-    <p>Другие флаги:
+    <p>Other flags:
       <code>--audio_enable</code> / <code>--audio_disable</code> (AudioEnable=true/false),
-      <code>--fps</code>, <code>--quality</code>, <code>--gop</code>, <code>--priority</code>, <code>--profile</code> и т.д.
-      (Смотрите <code>main.py</code> — раздел <code>generate_params()</code>.)
+      <code>--fps</code>, <code>--quality</code>, <code>--gop</code>, <code>--priority</code>, <code>--profile</code>, etc.
+      (See <code>main.py</code> — the <code>generate_params()</code> section.)
     </p>
   </li>
   <li>
-    <strong>RTSP / NTP / Snap</strong> (модули <code>camera_rtsp.py</code>, <code>camera_ntp.py</code>, <code>camera_snap.py</code>):
+    <strong>RTSP / NTP / Snap</strong> (modules <code>camera_rtsp.py</code>, <code>camera_ntp.py</code>, <code>camera_snap.py</code>):
     <ul>
       <li><code>--get_rtsp</code>, <code>--set_rtsp</code> + <code>--rtsp_port</code>, <code>--rtsp_auth</code></li>
-      <li><code>--get_ntp</code>, <code>--set_ntp</code> + <code>--enable_ntp</code>, <code>--ntp_server</code>, <code>--ntp_port</code> и т.д.</li>
+      <li><code>--get_ntp</code>, <code>--set_ntp</code> + <code>--enable_ntp</code>, <code>--ntp_server</code>, <code>--ntp_port</code>, etc.</li>
       <li><code>--get_snap</code>, <code>--set_snap</code> + <code>--enable_snap</code>, <code>--snap_interval</code></li>
     </ul>
     <p>
-      Эти флаги вызывают соответствующие функции, которые отправляют один GET или SET запрос на все поля.
+      These flags call the corresponding functions that send a single GET or SET request for all fields.
     </p>
   </li>
   <li>
-    <strong>(Опционально) Пакетное изменение</strong> (старый режим <code>--set_stream_all</code>)
-    — отправляет сразу все поля за один раз. Часто если один параметр неверен, камера игнорирует весь пакет.
-    Поэтому в большинстве случаев удобнее пользоваться <strong>одиночной передачей</strong>.
+    <strong>(Optional) Batch changes</strong> (the old mode <code>--set_stream_all</code>)
+    — sends all fields at once in a single request. Often, if one parameter is invalid, the camera ignores the entire request.
+    So in most cases, it’s more convenient to use <strong>single-parameter</strong> changes.
   </li>
 </ol>
 
-<h3>Примеры</h3>
+<h3>Examples</h3>
 <ul>
-  <li><strong>Изменить BitRateControl</strong> на VBR для дополнительного потока и выставить битрейт 512:</li>
+  <li><strong>Change BitRateControl</strong> to VBR for the extra stream and set bitrate to 512:</li>
 </ul>
 <pre><code>python main.py \
   --ip 192.168.1.10:1010 \
@@ -138,7 +138,7 @@
 </code></pre>
 
 <ul>
-  <li><strong>Отключить аудио</strong> для основного потока:</li>
+  <li><strong>Disable audio</strong> for the main stream:</li>
 </ul>
 <pre><code>python main.py \
   --ip 192.168.1.10 \
@@ -148,7 +148,7 @@
 </code></pre>
 
 <ul>
-  <li><strong>Настройка RTSP</strong> (порт 554, аутентификация digest):</li>
+  <li><strong>RTSP setup</strong> (port 554, digest authentication):</li>
 </ul>
 <pre><code>python main.py \
   --ip 192.168.1.10 \
@@ -157,7 +157,7 @@
 </code></pre>
 
 <ul>
-  <li><strong>Настройка NTP</strong>:</li>
+  <li><strong>NTP setup</strong>:</li>
 </ul>
 <pre><code>python main.py \
   --ip 192.168.1.10 \
@@ -168,7 +168,7 @@
 </code></pre>
 
 <ul>
-  <li><strong>Диапазон портов</strong>:</li>
+  <li><strong>Port range</strong>:</li>
 </ul>
 <pre><code>python main.py \
   --ip 192.168.1.10:1008-192.168.1.10:1010 \
@@ -176,33 +176,33 @@
   --bit_rate_control VBR
 </code></pre>
 <p>
-Скрипт переберёт <code>192.168.1.10:1008</code>, <code>192.168.1.10:1009</code>, <code>192.168.1.10:1010</code>.
+The script will iterate over <code>192.168.1.10:1008</code>, <code>192.168.1.10:1009</code>, and <code>192.168.1.10:1010</code>.
 </p>
 
 <ul>
-  <li><strong>Файл со списком адресов</strong> (<code>cams.txt</code>):</li>
+  <li><strong>File with a list of addresses</strong> (<code>cams.txt</code>):</li>
 </ul>
 <pre><code>python main.py \
   --ip cams.txt \
   --user admin --pwd 12345 \
   --bit_rate 512
 </code></pre>
-<p>В файле <code>cams.txt</code> перечислены строки вида <code>192.168.1.10:80</code>, <code>192.168.1.11:8080</code> и т.д.</p>
+<p>In <code>cams.txt</code>, there are lines like <code>192.168.1.10:80</code>, <code>192.168.1.11:8080</code>, etc.</p>
 
-<h3>Замечания</h3>
+<h3>Notes</h3>
 <ul>
-  <li><strong>DigestAuth</strong> уже встроен в код (через <code>requests.auth.HTTPDigestAuth</code>). 
-    Если логин/пароль верны, для большинства Dahua-камер не нужны куки или сессии.
+  <li><strong>DigestAuth</strong> is already built into the code (via <code>requests.auth.HTTPDigestAuth</code>).
+    If the login/password are correct, most Dahua cameras do not need cookies or sessions.
   </li>
-  <li>При неподдерживаемом названии поля (например, неправильный регистр 
-    <code>Video.Resolution</code> vs. <code>Video.resolution</code>) камера вернёт <code>200 OK</code>, 
-    но значение не применит.
+  <li>If an unsupported field name is used (for example, the wrong letter case
+    <code>Video.Resolution</code> vs. <code>Video.resolution</code>), the camera will return <code>200 OK</code>,
+    but the value will not be applied.
   </li>
-  <li>Если несколько параметров в одном запросе, а один неверен, камера может проигнорировать всё. 
-    Поэтому (по возможности) лучше изменять <strong>один параметр за раз</strong>.
+  <li>If multiple parameters are included in one request and one is invalid, the camera may ignore the entire request.
+    Therefore, (if possible) it’s better to <strong>change one parameter at a time</strong>.
   </li>
-  <li>Для уточнения доступных полей (включая регистр букв) можно сделать:
+  <li>To check available fields (including letter case), you can do:
     <pre><code>http://CAMERA_IP/cgi-bin/configManager.cgi?action=getConfig&amp;name=Encode[0].ExtraFormat[0]</code></pre>
-    и посмотреть, что возвращает камера.
+    and see what the camera returns.
   </li>
 </ul>
