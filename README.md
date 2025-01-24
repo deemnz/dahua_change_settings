@@ -137,7 +137,7 @@ Basic usage:
 </code></pre>
 
 <ul>
-  <li><strong>Get camera settings:</li>
+  <li><strong>Get camera settings:</strong>strong></li>
 </ul>
 
 <pre><code>python main.py \
