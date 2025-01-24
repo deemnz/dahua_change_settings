@@ -100,11 +100,10 @@ Basic usage:
 </code></pre>
     <p>— each one separately (DigestAuth automatically handles nonce, cnonce, etc.).</p>
 
-    <p>Other flags:
+    <p>Other flags:</p>
       <code>--audio_enable</code> / <code>--audio_disable</code> (AudioEnable=true/false),
       <code>--fps</code>, <code>--quality</code>, <code>--gop</code>, <code>--priority</code>, <code>--profile</code>, etc.
-      (See <code>main.py</code> — the <code>generate_params()</code> section.)
-    </p>
+      (See <code>main.py</code> — the <code>generate_params()</code> section.)    
   </li>
   <li>
     <strong>RTSP / NTP / Snap</strong> (modules <code>camera_rtsp.py</code>, <code>camera_ntp.py</code>, <code>camera_snap.py</code>):
