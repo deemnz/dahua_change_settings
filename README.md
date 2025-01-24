@@ -212,8 +212,8 @@ The script will iterate over <code>192.168.1.10:1008</code>, <code>192.168.1.10:
   <li>If multiple parameters are included in one request and one is invalid, the camera may ignore the entire request.
     Therefore, (if possible) it’s better to <strong>change one parameter at a time</strong>.
   </li>
-  <li>To check available fields (including letter case), you can do:
-    <pre><code>http://CAMERA_IP/cgi-bin/configManager.cgi?action=getConfig&amp;name=Encode[0].ExtraFormat[0]</code></pre>
+  <li>To check info and see available fields of main thread, you can do:
+    <pre><code>http://CAMERA_IP/cgi-bin/configManager.cgi?action=getConfig&amp;name=Encode[0].MainFormat[0]</code></pre>
     and see what the camera returns.
   </li>
 </ul>
