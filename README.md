@@ -1,4 +1,4 @@
-<h1>Dahua Change Settings</h1>
+<h1>Dahua Bulk Change Settings</h1>
 
 <p>
 A Python script for bulk management of Dahua camera settings (IP addresses, ports, video stream parameters, 
