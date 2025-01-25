@@ -1,19 +1,19 @@
 <h1>Dahua Bulk Change Settings</h1>
-
 <p>
-A Python script for bulk management of Dahua camera settings (IP addresses, ports, video stream parameters, 
-RTSP, NTP, snapshots, etc.) via the Dahua HTTP API. It supports <strong>Digest authentication</strong>, 
-allowing it to work with modern firmwares, as well as working with IP ranges 
-(for example <code>192.168.1.10-192.168.1.20</code>) and port ranges 
-(for example <code>192.168.1.10:1008-192.168.1.10:1010</code>).
+A Python script for bulk management of various Dahua camera settings (video streams, RTSP, NTP, audio, etc.)
+through the Dahua HTTP API. It supports <strong>Digest authentication</strong>, as well as IP/port ranges
+(e.g., <code>192.168.1.10-192.168.1.20</code> or <code>192.168.1.10:1008-192.168.1.10:1010</code>)
+and file-based address lists.
 </p>
 
 <h2>Main Features</h2>
 <ul>
-  <li><strong>Single parameter changes</strong> (just like manually calling <code>setConfig</code> in a browser).</li>
-  <li>Changing multiple parameters <strong>in one pass</strong> — if supported by the camera.</li>
-  <li>Working with <strong>IP ranges</strong> (or port ranges), as well as reading IP lists from a file.</li>
-  <li>Support for <strong>Russian/English</strong> output messages (via <code>--lang ru</code> / <code>--lang en</code>).</li>
+  <li><strong>Video stream management</strong> (read/set parameters like BitRate, FPS, Compression, Resolution, etc.) via <code>--get_stream</code> / <code>--set_stream</code> flags.</li>
+  <li><strong>NTP management</strong> (read/set) via <code>--get_ntp</code> / <code>--set_ntp</code>.</li>
+  <li><strong>RTSP management</strong> (read/set) via <code>--get_rtsp</code> / <code>--set_rtsp</code>.</li>
+  <li><strong>Audio management</strong> (read/set) via <code>--get_audio</code> / <code>--set_audio</code>.</li>
+  <li><strong>Supports IP ranges</strong> (and port ranges) as well as file-based IP lists for bulk configuration.</li>
+  <li><strong>Multilingual output</strong> (<code>--lang ru</code> or <code>--lang en</code>).</li>
 </ul>
 
 <h2>Installation</h2>
@@ -35,185 +35,146 @@ allowing it to work with modern firmwares, as well as working with IP ranges
 ├── requirements.txt
 ├── utils/
 │   ├── __init__.py
-│   ├── messages.py        # Dictionary of messages (ru/en)
-│   └── ip_utils.py        # Working with IP/port ranges, parsing
+│   ├── messages.py        # Message dictionary (ru/en)
+│   └── ip_utils.py        # IP/port range handling, parsing
 ├── dahua_api/
 │   ├── __init__.py
 │   ├── camera_common.py   # Common GET/SET functions (DigestAuth)
-│   ├── camera_stream.py   # Video/audio settings (Encode[..])
-│   ├── camera_rtsp.py     # RTSP settings
-│   ├── camera_ntp.py      # NTP settings
-│   └── camera_snap.py     # Snapshot settings (Snap[..])
+│   ├── camera_stream.py   # get_stream_config(...) for video streams
+│   ├── camera_ntp.py      # get_ntp_config(...), set_ntp_config(...)
+│   ├── camera_rtsp.py     # get_rtsp_config(...), set_rtsp_config(...)
+│   └── camera_audio.py    # get_audio_config(...), set_audio_config(...)
 └── ...
 </code></pre>
 
 <h2>Running the Script</h2>
 <p>
-Basic usage:
+Run from the project root directory:
 </p>
-<pre><code>python main.py [options]
+<pre><code>python main.py [arguments]
 </code></pre>
 <p>
-(Make sure you run it from the project's root folder so that imports work correctly.)
+Make sure you use the same Python environment where dependencies are installed.
 </p>
 
-<h3>Key Arguments</h3>
+<h2>Video Stream Settings</h2>
+<p>
+Use <strong>--get_stream</strong> / <strong>--set_stream</strong> to read or modify parameters such as 
+<code>Compression</code>, <code>BitRate</code>, <code>BitRateControl</code>, <code>FPS</code>, <code>resolution</code>, and more.
+</p>
 <ul>
-  <li><code>--ip</code>: Camera address, IP range, or a file with a list of addresses.
-    <ul>
-      <li><strong>Examples:</strong></li>
-      <li><code>--ip 192.168.1.10</code> (single camera, default port 80)</li>
-      <li><code>--ip 192.168.1.10:8080</code> (camera with non-standard port 8080)</li>
-      <li><code>--ip cams.txt</code> (file where each line is <code>ip:port</code>)</li>
-      <li><code>--ip 192.168.1.10:80-192.168.1.15:80</code> (IP range)</li>
-      <li><code>--ip 192.168.1.10:1008-192.168.1.10:1010</code> (same IP, different ports)</li>
-    </ul>
+  <li><code>--channel 0</code>, <code>--stream_type MainFormat</code>, <code>--stream_index 0</code> specify
+    which exact stream is targeted (<em>Encode[0].MainFormat[0]</em>, <em>Encode[0].ExtraFormat[0]</em>, etc.).
   </li>
-  <li><code>--user</code>, <code>--pwd</code>: Login and password. DigestAuth is used.</li>
-  <li><code>--lang</code>: Language for output messages (<code>ru</code> or <code>en</code>). Default is <code>ru</code>.</li>
 </ul>
 
-<h3>Parameter Change Modes</h3>
-<ol>
-  <li>
-    <strong>Single parameters</strong> (similarly named short flags).
-    <p>
-      Each change is sent via an individual <code>setConfig</code> call, just like a manual call in the browser.
-      For example, arguments for <em>ExtraFormat</em>:
-    </p>
-    <pre><code>python main.py \
-  --ip 192.168.1.10:1010 \
-  --user admin --pwd 12345 \
-  --stream_type ExtraFormat --stream_index 0 \
-  --compression H.265 \
-  --bit_rate 512 \
-  --bit_rate_control VBR \
-  --resolution 640x480
-</code></pre>
-    <p>
-      This will send multiple requests:
-    </p>
-    <pre><code>&Encode[0].ExtraFormat[0].Video.Compression=H.265
-&Encode[0].ExtraFormat[0].Video.BitRate=512
-&Encode[0].ExtraFormat[0].Video.BitRateControl=VBR
-&Encode[0].ExtraFormat[0].Video.resolution=640x480
-</code></pre>
-    <p>— each one separately (DigestAuth automatically handles nonce, cnonce, etc.).</p>
-
-    Other flags:
-      --audio_enable / --audio_disable (AudioEnable=true/false),
-      --fps, --quality, --gop, --priority, --profile, etc.
-      (See main.py — the generate_params() section.)    
-  </li>
-  <li>
-    <strong>RTSP / NTP / Snap</strong> (modules <code>camera_rtsp.py</code>, <code>camera_ntp.py</code>, <code>camera_snap.py</code>):
-    <ul>
-      <li><code>--get_rtsp</code>, <code>--set_rtsp</code> + <code>--rtsp_port</code>, <code>--rtsp_auth</code></li>
-      <li><code>--get_ntp</code>, <code>--set_ntp</code> + <code>--enable_ntp</code>, <code>--ntp_server</code>, <code>--ntp_port</code>, etc.</li>
-      <li><code>--get_snap</code>, <code>--set_snap</code> + <code>--enable_snap</code>, <code>--snap_interval</code></li>
-    </ul>
-    <p>
-      These flags call the corresponding functions that send a single GET or SET request for all fields.
-    </p>
-  </li>
-  <li>
-    <strong>(Optional) Batch changes</strong> (the old mode <code>--set_stream_all</code>)
-    — sends all fields at once in a single request. Often, if one parameter is invalid, the camera ignores the entire request.
-    So in most cases, it’s more convenient to use <strong>single-parameter</strong> changes.
-  </li>
-</ol>
-
-<h3>Examples</h3>
-<ul>
-  <li><strong>Change BitRateControl</strong> to VBR for the extra stream and set bitrate to 512:</li>
-</ul>
-<pre><code>python main.py \
-  --ip 192.168.1.10:1010 \
-  --user admin \
-  --pwd 12345 \
+<pre><code># Example: Get only BitRate and Compression from ExtraFormat
+python main.py --ip 192.168.1.10:1010 --user admin --pwd 12345 \
+  --get_stream \
   --stream_type ExtraFormat \
-  --bit_rate_control VBR \
-  --bit_rate 512
+  --stream_index 0 \
+  --bit_rate \
+  --compression
+
+# Example: Set BitRate and BitRateControl (each parameter is sent as a separate request)
+python main.py --ip 192.168.1.10:1010 --user admin --pwd 12345 \
+  --set_stream \
+  --bit_rate_value 1024 \
+  --bit_rate_control_value VBR
 </code></pre>
 
-<ul>
-  <li><strong>Get camera settings:</strong></li>
-</ul>
+<h2>NTP Settings</h2>
+<p>
+Use <code>--get_ntp</code> and <code>--set_ntp</code> to read/set NTP.
+</p>
+<pre><code># Example: get NTP settings
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 --get_ntp
 
-<pre><code>python main.py \
-  --lang ru \
-  --ip 10.88.39.16:1006 \
-  --user admin \
-  --pwd 39Cprkbgr! \
-  --get_stream
-</code></pre>
-
-<ul>
-  <li><strong>Disable audio</strong> for the main stream:</li>
-</ul>
-<pre><code>python main.py \
-  --ip 192.168.1.10 \
-  --user admin \
-  --pwd 12345 \
-  --audio_disable
-</code></pre>
-
-<ul>
-  <li><strong>RTSP setup</strong> (port 554, digest authentication):</li>
-</ul>
-<pre><code>python main.py \
-  --ip 192.168.1.10 \
-  --user admin --pwd 12345 \
-  --set_rtsp --rtsp_port 554 --rtsp_auth digest
-</code></pre>
-
-<ul>
-  <li><strong>NTP setup</strong>:</li>
-</ul>
-<pre><code>python main.py \
-  --ip 192.168.1.10 \
-  --user admin --pwd 12345 \
+# Example: set NTP
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 \
   --set_ntp --enable_ntp \
-  --ntp_server pool.ntp.org --ntp_port 123 --ntp_interval 60 \
+  --ntp_server time.windows.com \
+  --ntp_port 123 \
+  --ntp_interval 60 \
   --ntp_timezone "GMT+03:00-Moscow"
 </code></pre>
 
-<ul>
-  <li><strong>Port range</strong>:</li>
-</ul>
-<pre><code>python main.py \
-  --ip 192.168.1.10:1008-192.168.1.10:1010 \
-  --user admin --pwd 12345 \
-  --bit_rate_control VBR
-</code></pre>
+<h2>RTSP Settings</h2>
 <p>
-The script will iterate over <code>192.168.1.10:1008</code>, <code>192.168.1.10:1009</code>, and <code>192.168.1.10:1010</code>.
+Use <code>--get_rtsp</code> / <code>--set_rtsp</code> to read/set RTSP port and authentication.
 </p>
+<pre><code># Example: get RTSP settings
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 --get_rtsp
 
+# Example: change RTSP settings
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 \
+  --set_rtsp \
+  --rtsp_port 10554 \
+  --rtsp_auth disable
+</code></pre>
+
+<h2>Audio Settings</h2>
+<p>
+Use <code>--get_audio</code> / <code>--set_audio</code> to read/set audio configurations (bitrate, compression, etc.).
+</p>
+<pre><code># Example: get audio
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 --get_audio
+
+# Example: set audio (enable, G.711A, bitrate=64)
+python main.py --ip 192.168.1.10 --user admin --pwd 12345 \
+  --set_audio \
+  --audio_enable \
+  --audio_compression G.711A \
+  --audio_bitrate 64
+</code></pre>
+
+<h2>IP Ranges and Files</h2>
 <ul>
-  <li><strong>File with a list of addresses</strong> (<code>cams.txt</code>):</li>
+  <li><strong>IP range</strong>: <code>--ip 192.168.1.10-192.168.1.15</code><br>
+    The script will iterate from <code>.10</code> to <code>.15</code> (port 80 by default).</li>
+  <li><strong>Port range</strong>: <code>--ip 192.168.1.10:1008-192.168.1.10:1010</code><br>
+    The script will iterate ports <code>1008</code>, <code>1009</code>, <code>1010</code>.</li>
+  <li><strong>File</strong> with IP addresses: <code>--ip cams.txt</code>, where each line is 
+    something like <code>192.168.1.10:80</code>.
+  </li>
 </ul>
-<pre><code>python main.py \
+
+<h2>Examples</h2>
+<pre><code># Example: set VBR for all cameras in cams.txt
+python main.py \
   --ip cams.txt \
   --user admin --pwd 12345 \
-  --bit_rate 512
-</code></pre>
-<p>In <code>cams.txt</code>, there are lines like <code>192.168.1.10:80</code>, <code>192.168.1.11:8080</code>, etc.</p>
+  --set_stream \
+  --bit_rate_control_value VBR
 
-<h3>Notes</h3>
+# Example: disable audio on a range of IP addresses
+python main.py \
+  --ip 192.168.1.10-192.168.1.15 \
+  --user admin --pwd 12345 \
+  --set_audio --audio_disable
+</code></pre>
+
+<h2>Notes</h2>
 <ul>
-  <li><strong>DigestAuth</strong> is already built into the code (via <code>requests.auth.HTTPDigestAuth</code>).
-    If the login/password are correct, most Dahua cameras do not need cookies or sessions.
-  </li>
-  <li>If an unsupported field name is used (for example, the wrong letter case
-    <code>Video.Resolution</code> vs. <code>Video.resolution</code>), the camera will return <code>200 OK</code>,
-    but the value will not be applied.
-  </li>
-  <li>If multiple parameters are included in one request and one is invalid, the camera may ignore the entire request.
-    Therefore, (if possible) it’s better to <strong>change one parameter at a time</strong>.
-  </li>
-  <li>To check info and see available fields of main thread, you can do:
-    <pre><code>http://CAMERA_IP/cgi-bin/configManager.cgi?action=getConfig&amp;name=Encode[0].MainFormat[0]</code></pre>
-    and see what the camera returns.
+  <li><strong>DigestAuth</strong> (via <code>requests.auth.HTTPDigestAuth</code>) is enabled. 
+    No extra cookies are needed if the login/password are correct.</li>
+  <li>If the camera returns <code>200 OK</code> but the value does not actually change,
+    check the case (uppercase/lowercase) and exact field names (see <code>getConfig&amp;name=...</code> response).</li>
+  <li>If an invalid parameter is provided, Dahua may ignore the update but still return <code>200 OK</code>.</li>
+  <li>To see all keys (e.g., <code>Encode[0].ExtraFormat[0]</code>), try:
+    <pre><code>http://CAMERA_IP/cgi-bin/configManager.cgi?action=getConfig&amp;name=Encode[0].ExtraFormat[0]</code></pre>
+    or similar requests.
   </li>
 </ul>
+
+<h2>License</h2>
+<p>
+Distributed under the <strong>MIT License</strong>. The author is not responsible for any consequences 
+arising from use of this code.
+</p>
+
+<hr>
+<p>
+If you have questions or suggestions, feel free to open an <strong>Issue</strong> or Pull Request in the 
+<a href="https://github.com/deemnz/dahua_change_settings">repository</a>.
+</p>
